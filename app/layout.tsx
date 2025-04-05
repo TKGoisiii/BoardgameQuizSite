@@ -21,8 +21,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ja" className={dotGothic16.className}>
-      <body className="h-screen relative">
-        <main className="flex flex-col min-h-screen pb-4">{children}</main>
+      <body className="h-dvh relative">
+        <main className="flex flex-col min-h-dvh pb-4">{children}</main>
         <Footer />
       </body>
     </html>
