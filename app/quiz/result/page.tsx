@@ -22,19 +22,19 @@ function ResultDisplay() {
     }
 
     return (
-        <Card className="w-full max-w-sm">
-        <CardHeader className="p-4 sm:p-6">
-            <CardTitle className="text-center text-xl sm:text-2xl font-semibold">クイズ結果</CardTitle>
-        </CardHeader>
-        <CardContent className="text-center p-4 sm:p-6">
-            <p className="text-4xl sm:text-5xl font-bold my-4 sm:my-6">
-            {scoreValue} / 10
-            </p>
-            <p className="text-base sm:text-lg mb-6 sm:mb-8">{message}</p>
-            <Link href="/" passHref>
-                <Button size="lg">トップに戻る</Button>
-            </Link>
-        </CardContent>
+        <Card className="w-full max-w-sm border-3">
+            <CardHeader className="p-4 sm:p-6 border-b-3">
+                <CardTitle className="text-center text-xl sm:text-2xl font-semibold">クイズ結果</CardTitle>
+            </CardHeader>
+            <CardContent className="text-center p-4 sm:p-6">
+                <p className="text-4xl sm:text-5xl font-bold my-4 sm:my-6">
+                {scoreValue} / 10
+                </p>
+                <p className="text-base sm:text-lg mb-6 sm:mb-8">{message}</p>
+                <Link href="/" passHref>
+                    <Button size="lg">トップに戻る</Button>
+                </Link>
+            </CardContent>
         </Card>
     );
 }

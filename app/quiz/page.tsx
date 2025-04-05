@@ -28,11 +28,11 @@ export default async function QuizPage() {
       <div className="flex flex-col flex-grow p-2 sm:p-4">
         <div className="flex flex-col flex-grow rounded-lg shadow-sm bg-card text-card-foreground md:w-[70%] mx-auto w-full border-3">
           <CardHeader className="p-3 sm:p-4 border-b-3">
-            <CardTitle className="text-center text-base sm:text-lg font-semibold">
-              ボードゲームクイズ (1/10)
+            <CardTitle className="text-center text-base sm:text-2l font-semibold">
+              ボードゲームクイズ(BETA版)
             </CardTitle>
           </CardHeader>
-          <CardContent className="flex flex-col flex-grow p-3 sm:p-4 overflow-y-auto">
+          <CardContent className="flex flex-col flex-grow p-3 sm:p-4 overflow-y-auto items-center justify-center">
             <QuizClient initialData={initialData} />
           </CardContent>
         </div>

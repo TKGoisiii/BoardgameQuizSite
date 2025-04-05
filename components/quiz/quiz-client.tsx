@@ -82,36 +82,37 @@ export function QuizClient({ initialData }: QuizClientProps) {
 
     return (
         <>
-        <QuizQuestion
-            questionText={currentQuestion.questionText}
-            gameA={currentQuestion.gameA}
-            gameB={currentQuestion.gameB}
-            selectedAnswer={selectedAnswer}
-            correctAnswerId={currentQuestion.correctAnswerId}
-            showFeedback={showFeedback}
-            onAnswer={handleAnswer}
-        />
+            <p>{questionNumber} / 10 問目</p>
+            <QuizQuestion
+                questionText={currentQuestion.questionText}
+                gameA={currentQuestion.gameA}
+                gameB={currentQuestion.gameB}
+                selectedAnswer={selectedAnswer}
+                correctAnswerId={currentQuestion.correctAnswerId}
+                showFeedback={showFeedback}
+                onAnswer={handleAnswer}
+            />
 
-        <div className={cn(
-            "mt-4 w-full flex flex-col items-center transition-opacity duration-300",
-            selectedAnswer ? 'opacity-100' : 'opacity-0 pointer-events-none'
-        )}>
-            {selectedAnswer && currentQuestion && (
-            <>
-                <QuizFeedback
-                    isCorrect={isCorrect}
-                    gameA={currentQuestion.gameA}
-                    gameB={currentQuestion.gameB}
-                    correctAnswerId={currentQuestion.correctAnswerId}
-                />
-                <QuizControls
-                    score={score}
-                    questionNumber={questionNumber}
-                    onNextQuestion={handleNextQuestion}
-                />
-            </>
-            )}
-        </div>
+            <div className={cn(
+                "mt-4 w-full flex flex-col items-center transition-opacity duration-300",
+                selectedAnswer ? 'opacity-100' : 'opacity-0 pointer-events-none'
+            )}>
+                {selectedAnswer && currentQuestion && (
+                <>
+                    <QuizFeedback
+                        isCorrect={isCorrect}
+                        gameA={currentQuestion.gameA}
+                        gameB={currentQuestion.gameB}
+                        correctAnswerId={currentQuestion.correctAnswerId}
+                    />
+                    <QuizControls
+                        score={score}
+                        questionNumber={questionNumber}
+                        onNextQuestion={handleNextQuestion}
+                    />
+                </>
+                )}
+            </div>
         </>
     );
 }
