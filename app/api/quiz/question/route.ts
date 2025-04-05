@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { Boardgame } from '@/types/boardgame';
 
 // 環境変数からベースURLを取得、なければ localhost を仮定
-const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 
 // ゲームIDリストを取得する関数
 async function getGameIds(): Promise<string[]> {
