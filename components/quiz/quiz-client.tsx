@@ -35,7 +35,10 @@ export function QuizClient({ initialData }: QuizClientProps) {
         setIsLoading(true);
         setError(null);
         try {
-        const response = await fetch('/api/quiz/question');
+        const response = await fetch('/api/quiz/question', {
+            cache: 'no-store' // SSR用にキャッシュを無効化
+        });
+        
         if (!response.ok) {
             throw new Error('Failed to fetch question');
         }
