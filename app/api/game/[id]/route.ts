@@ -8,10 +8,19 @@ export async function GET(
 ) {
     const { id } = await params
     try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_BGG_API_URL}/thing?id=${id}&stats=1`)
+        // BGG APIへのfetch呼び出しでキャッシュを無効化
+        const res = await fetch(`${process.env.NEXT_PUBLIC_BGG_API_URL}/thing?id=${id}&stats=1`, { cache: 'no-store' });
         
         if (!res.ok) {
-            throw new Error('Failed to fetch data')
+            // 404 Not Found は許容する（BGG API が見つけられない場合があるため）
+            if (res.status === 404) {
+                console.warn(`Game data not found for ID ${id} (404) from BGG API`);
+                // 404の場合はnullや空のオブジェクトではなく、エラーを示すJSONを返すか、
+                // 呼び出し元(api/quiz/question)が処理できるように特定の形式で返すのが良い。
+                // ここではエラーとして返す例：
+                return NextResponse.json({ error: `Game not found (404) for ID: ${id}` }, { status: 404 });
+            }
+            throw new Error(`Failed to fetch data from BGG API: ${res.status} ${res.statusText}`);
         }
 
         const xmlData = await res.text();

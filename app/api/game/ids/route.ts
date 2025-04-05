@@ -5,13 +5,12 @@ import * as cheerio from 'cheerio';
 // キャッシュ変数
 let cachedGameIds: string[] = [];
 let cacheTimestamp: number | null = null;
-const CACHE_DURATION_MS = 60 * 60 * 1000; // 1時間
+const CACHE_DURATION_MS = 60 * 60 * 24 * 1000; // 1日
 
 // 指定されたページのボードゲームIDを取得する
 async function fetchBoardGameIdsFromPage(pageNumber: number): Promise<string[]> {
     try {
         const url = `https://boardgamegeek.com/browse/boardgame/page/${pageNumber}`;
-        console.log(`Fetching data from: ${url}`);
 
         const { data } = await axios.get(url);
         const $ = cheerio.load(data);
@@ -30,7 +29,6 @@ async function fetchBoardGameIdsFromPage(pageNumber: number): Promise<string[]> 
         }
         });
 
-        console.log(`ページ ${pageNumber} から取得したゲームID数: ${gameIds.length}`);
         return gameIds;
     } catch (error) {
         console.error(`ページ ${pageNumber} のデータ取得中にエラーが発生しました:`, error instanceof Error ? error.message : error);

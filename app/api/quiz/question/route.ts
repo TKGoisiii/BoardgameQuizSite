@@ -9,7 +9,8 @@ const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 // ゲームIDリストを取得する関数
 async function getGameIds(): Promise<string[]> {
   try {
-    const res = await fetch(`${baseUrl}/api/game/ids`, { next: { revalidate: 86400 } }); // 1日キャッシュ
+    // fetchのキャッシュを無効化
+    const res = await fetch(`${baseUrl}/api/game/ids`, { cache: 'no-store' });
     if (!res.ok) {
       throw new Error(`Failed to fetch game IDs: ${res.status}`);
     }
@@ -27,18 +28,36 @@ async function getGameIds(): Promise<string[]> {
 // 単一のゲームデータを取得する関数
 async function getGameData(id: string): Promise<Boardgame | null> {
   try {
-    const res = await fetch(`${baseUrl}/api/game/${id}`, { next: { revalidate: 3600 } }); // 1時間キャッシュ
-    // 404 Not Found は許容する (BGG API が見つけられない場合があるため)
-    if (!res.ok && res.status !== 404) {
-      console.error(`Failed to fetch game data for ID ${id}: ${res.status} ${res.statusText}`);
-      return null; // 404以外のエラーはnullを返す
-    }
+    // fetchのキャッシュを無効化
+    const res = await fetch(`${baseUrl}/api/game/${id}`, { cache: 'no-store' });
+
+    // /api/game/[id] が 404 を返した場合 (JSONエラー含む) は null を返す
     if (res.status === 404) {
-        console.warn(`Game data not found for ID ${id} (404)`);
-        return null; // 404の場合はnull
+        console.warn(`Game data not found via API for ID ${id} (404 status received)`);
+        return null;
     }
+
+    // その他のエラーチェック
+    if (!res.ok) {
+      console.error(`Failed to fetch game data for ID ${id}: ${res.status} ${res.statusText}`);
+      // レスポンスボディをログに出力してみる（デバッグ用）
+      try {
+        const errorBody = await res.text();
+        console.error(`Error response body for ID ${id}: ${errorBody}`);
+      } catch { // Remove unused error variable declaration
+        console.error(`Could not read error response body for ID ${id}`);
+      }
+      return null; // 404以外のエラーもnullを返す
+    }
+
+    // 正常な応答の場合
     const data: Boardgame = await res.json();
-    return data || null; // データがない場合もnull
+    // データが空や不正な形式でないか基本的なチェックを追加しても良い
+    if (!data || !data.id) {
+        console.warn(`Received invalid game data structure for ID ${id}`);
+        return null;
+    }
+    return data;
   } catch (error) {
     console.error(`Error fetching game data for ID ${id}:`, error);
     return null; // その他のエラーもnull
