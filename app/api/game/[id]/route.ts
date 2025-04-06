@@ -2,6 +2,8 @@ import { Boardgame } from '@/types/boardgame';
 import { NextResponse } from 'next/server'
 import { parseStringPromise } from 'xml2js';
 
+export const dynamic = 'force-dynamic'; // Next.js データキャッシュを無効化
+
 export async function GET(
     _: Request,
     { params }: { params: Promise<{ id: string }> }
@@ -15,9 +17,6 @@ export async function GET(
             // 404 Not Found は許容する（BGG API が見つけられない場合があるため）
             if (res.status === 404) {
                 console.warn(`Game data not found for ID ${id} (404) from BGG API`);
-                // 404の場合はnullや空のオブジェクトではなく、エラーを示すJSONを返すか、
-                // 呼び出し元(api/quiz/question)が処理できるように特定の形式で返すのが良い。
-                // ここではエラーとして返す例：
                 return NextResponse.json({ error: `Game not found (404) for ID: ${id}` }, { status: 404 });
             }
             throw new Error(`Failed to fetch data from BGG API: ${res.status} ${res.statusText}`);

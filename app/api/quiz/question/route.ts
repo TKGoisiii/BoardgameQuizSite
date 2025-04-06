@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { Boardgame } from '@/types/boardgame';
+import crypto from 'crypto'; // crypto モジュールを再度インポート
 
 export const dynamic = 'force-dynamic';
 
@@ -64,12 +65,32 @@ async function getGameData(id: string): Promise<Boardgame | null> {
   }
 }
 
-// 配列からランダムに指定された数の重複しない要素を選択
+// 配列からランダムに指定された数の重複しない要素を選択 (効率化版)
 function selectRandomDistinctItems<T>(array: T[], count: number): T[] {
-  if (!array || array.length < count) return []; // 十分な要素がない場合は空配列
-  const shuffled = [...array].sort(() => 0.5 - Math.random());
-  return shuffled.slice(0, count);
+  const len = array.length;
+  if (!array || len < count) return []; // 十分な要素がない場合は空配列
+
+  const selectedItems: T[] = [];
+  const selectedIndices = new Set<number>(); // 選択済みインデックスを記録
+
+  // count 個のユニークなインデックスを選ぶまでループ
+  while (selectedIndices.size < count) {
+    // crypto.randomInt() で暗号学的に安全なランダムなインデックスを生成 (0 <= randomIndex < len)
+    const randomIndex = crypto.randomInt(len);
+    // まだ選択されていないインデックスの場合
+    if (!selectedIndices.has(randomIndex)) {
+      selectedIndices.add(randomIndex); // インデックスを記録
+      selectedItems.push(array[randomIndex]); // 対応する要素を結果に追加
+    }
+    // ループが無限にならないように基本的なチェック（理論上は len >= count なら必ず終わる）
+    if (selectedIndices.size >= len && selectedIndices.size < count) {
+        console.warn("Could not select enough distinct items, returning what was found.");
+        break; // 念のため無限ループ防止
+    }
+  }
+  return selectedItems;
 }
+
 
 export async function GET() {
   try {
