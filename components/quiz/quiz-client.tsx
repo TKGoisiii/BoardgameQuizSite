@@ -42,7 +42,8 @@ export function QuizClient({ initialData }: QuizClientProps) {
         if (!response.ok) {
             throw new Error('Failed to fetch question');
         }
-        const data = await response.json();
+        const data = await response.json();                 
+
         setCurrentQuestion(data);
         } catch (err) {
         setError(err instanceof Error ? err.message : 'Unknown error');

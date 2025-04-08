@@ -158,10 +158,16 @@ export async function GET(request: Request) {
     const questionText = `評価が高いのはどっち？`; // 問題文は固定（将来的に変更可能）
 
     const quizData = {
-      requestId: uniqueRequestId, // 生成した一意のIDを追加
+      requestId: uniqueRequestId,
       questionText: questionText,
-      gameA: gameA,
-      gameB: gameB,
+      gameA: {
+        ...gameA,
+        imageUrl: `${gameA.image}?width=300&height=300&fit=cover` // 画像サイズ指定
+      },
+      gameB: {
+        ...gameB,
+        imageUrl: `${gameB.image}?width=300&height=300&fit=cover` // 画像サイズ指定
+      },
       correctAnswerId: correctAnswerId,
     };
 
