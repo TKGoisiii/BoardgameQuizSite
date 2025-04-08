@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
 import { Boardgame } from '@/types/boardgame';
-import crypto from 'crypto'; // crypto モジュールを再度インポート
+import crypto from 'crypto'; // crypto モジュールをインポート
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0; // 追加: 常に再検証を強制
+
 
 // 環境変数からベースURLを取得、なければ localhost を仮定
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
@@ -10,8 +12,12 @@ const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 // ゲームIDリストを取得する関数
 async function getGameIds(): Promise<string[]> {
   try {
-    // fetchのキャッシュを無効化
-    const res = await fetch(`${baseUrl}/api/game/ids`, { cache: 'no-store' });
+    // fetchのキャッシュを無効化し、タイムスタンプを追加して確実にキャッシュを回避
+    const timestamp = Date.now();
+    const res = await fetch(`${baseUrl}/api/game/ids?t=${timestamp}`, { 
+      cache: 'no-store',
+      next: { revalidate: 0 }
+    });
     if (!res.ok) {
       throw new Error(`Failed to fetch game IDs: ${res.status}`);
     }
@@ -29,8 +35,12 @@ async function getGameIds(): Promise<string[]> {
 // 単一のゲームデータを取得する関数
 async function getGameData(id: string): Promise<Boardgame | null> {
   try {
-    // fetchのキャッシュを無効化
-    const res = await fetch(`${baseUrl}/api/game/${id}`, { cache: 'no-store' });
+    // fetchのキャッシュを無効化し、タイムスタンプを追加して確実にキャッシュを回避
+    const timestamp = Date.now();
+    const res = await fetch(`${baseUrl}/api/game/${id}?t=${timestamp}`, { 
+      cache: 'no-store',
+      next: { revalidate: 0 }
+    });
 
     // /api/game/[id] が 404 を返した場合 (JSONエラー含む) は null を返す
     if (res.status === 404) {
@@ -88,11 +98,19 @@ function selectRandomDistinctItems<T>(array: T[], count: number): T[] {
         break; // 念のため無限ループ防止
     }
   }
+  console.log(selectedItems);
   return selectedItems;
 }
 
 
-export async function GET() {
+export async function GET(request: Request) {
+  // リクエストごとに一意のIDを生成
+  const uniqueRequestId = crypto.randomUUID();
+
+  // リクエストURLからクエリパラメータを取得（存在しない場合は作成）
+  const url = new URL(request.url);
+  // 現在のタイムスタンプを追加して、毎回異なるリクエストにする
+  url.searchParams.set('_t', Date.now().toString());
   try {
     const gameIds = await getGameIds();
     if (gameIds.length < 2) {
@@ -148,13 +166,20 @@ export async function GET() {
     const questionText = `評価が高いのはどっち？`; // 問題文は固定（将来的に変更可能）
 
     const quizData = {
+      requestId: uniqueRequestId, // 生成した一意のIDを追加
       questionText: questionText,
       gameA: gameA,
       gameB: gameB,
       correctAnswerId: correctAnswerId,
     };
 
-    return NextResponse.json(quizData);
+    return NextResponse.json(quizData, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    });
 
   } catch (error) {
     console.error('Error generating quiz question:', error);

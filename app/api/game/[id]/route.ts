@@ -11,7 +11,9 @@ export async function GET(
     const { id } = await params
     try {
         // BGG APIへのfetch呼び出しでキャッシュを無効化
-        const res = await fetch(`${process.env.NEXT_PUBLIC_BGG_API_URL}/thing?id=${id}&stats=1`, { cache: 'no-store' });
+        const res = await fetch(`${process.env.NEXT_PUBLIC_BGG_API_URL}/thing?id=${id}&stats=1`, { 
+            cache: 'no-store' 
+        });
         
         if (!res.ok) {
             // 404 Not Found は許容する（BGG API が見つけられない場合があるため）
