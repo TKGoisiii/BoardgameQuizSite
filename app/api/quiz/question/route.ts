@@ -12,12 +12,8 @@ const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 // ゲームIDリストを取得する関数
 async function getGameIds(): Promise<string[]> {
   try {
-    // fetchのキャッシュを無効化し、タイムスタンプを追加して確実にキャッシュを回避
-    const timestamp = Date.now();
-    const res = await fetch(`${baseUrl}/api/game/ids?t=${timestamp}`, { 
-      cache: 'no-store',
-      next: { revalidate: 0 }
-    });
+    const res = await fetch(`${baseUrl}/api/game/ids`);
+
     if (!res.ok) {
       throw new Error(`Failed to fetch game IDs: ${res.status}`);
     }
@@ -28,16 +24,14 @@ async function getGameIds(): Promise<string[]> {
     return data.gameIds;
   } catch (error) {
     console.error('Error fetching game IDs:', error);
-    throw new Error('Failed to fetch game IDs'); // エラーを再スロー
+    throw new Error('Failed to fetch game IDs');
   }
 }
 
 // 単一のゲームデータを取得する関数
 async function getGameData(id: string): Promise<Boardgame | null> {
   try {
-    // fetchのキャッシュを無効化し、タイムスタンプを追加して確実にキャッシュを回避
-    const timestamp = Date.now();
-    const res = await fetch(`${baseUrl}/api/game/${id}?t=${timestamp}`, { 
+    const res = await fetch(`${baseUrl}/api/game/${id}`, { 
       cache: 'no-store',
       next: { revalidate: 0 }
     });
@@ -98,7 +92,6 @@ function selectRandomDistinctItems<T>(array: T[], count: number): T[] {
         break; // 念のため無限ループ防止
     }
   }
-  console.log(selectedItems);
   return selectedItems;
 }
 
@@ -106,7 +99,6 @@ function selectRandomDistinctItems<T>(array: T[], count: number): T[] {
 export async function GET(request: Request) {
   // リクエストごとに一意のIDを生成
   const uniqueRequestId = crypto.randomUUID();
-
   // リクエストURLからクエリパラメータを取得（存在しない場合は作成）
   const url = new URL(request.url);
   // 現在のタイムスタンプを追加して、毎回異なるリクエストにする
