@@ -40,6 +40,7 @@ export function QuizGameCard({ game, isSelected, onClick, feedback = null }: Qui
                     alt={gameName}
                     fill
                     style={{ objectFit: 'contain', imageRendering: 'pixelated' }}
+                    quality={75} // 画質 (0-100)
                     sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
                     priority
                 />
