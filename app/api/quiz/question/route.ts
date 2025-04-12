@@ -9,22 +9,27 @@ export const revalidate = 0; // 追加: 常に再検証を強制
 // 環境変数からベースURLを取得、なければ localhost を仮定
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
 
-// ゲームIDリストを取得する関数
-async function getGameIds(): Promise<string[]> {
+// 有効な難易度を定義 (quiz-client.tsx と合わせる)
+const VALID_DIFFICULTIES = ['easy', 'normal', 'hard'] as const;
+type Difficulty = typeof VALID_DIFFICULTIES[number];
+
+// 指定された難易度のゲームIDリストを取得する関数
+async function getGameIds(difficulty: Difficulty): Promise<string[]> {
   try {
-    const res = await fetch(`${baseUrl}/api/game/ids`);
+    // /api/game/ids に difficulty パラメータを付与
+    const res = await fetch(`${baseUrl}/api/game/ids?difficulty=${difficulty}`);
 
     if (!res.ok) {
-      throw new Error(`Failed to fetch game IDs: ${res.status}`);
+      throw new Error(`Failed to fetch game IDs for difficulty ${difficulty}: ${res.status}`);
     }
     const data = await res.json();
     if (data.error || !data.gameIds) {
-      throw new Error(data.error || 'No gameIds found in response');
+      throw new Error(data.error || `No gameIds found in response for difficulty ${difficulty}`);
     }
     return data.gameIds;
   } catch (error) {
-    console.error('Error fetching game IDs:', error);
-    throw new Error('Failed to fetch game IDs');
+    console.error(`Error fetching game IDs for difficulty ${difficulty}:`, error);
+    throw new Error(`Failed to fetch game IDs for difficulty ${difficulty}`);
   }
 }
 
@@ -99,14 +104,24 @@ function selectRandomDistinctItems<T>(array: T[], count: number): T[] {
 export async function GET(request: Request) {
   // リクエストごとに一意のIDを生成
   const uniqueRequestId = crypto.randomUUID();
-  // リクエストURLからクエリパラメータを取得（存在しない場合は作成）
   const url = new URL(request.url);
-  // 現在のタイムスタンプを追加して、毎回異なるリクエストにする
-  url.searchParams.set('_t', Date.now().toString());
+  const difficultyParam = url.searchParams.get('difficulty');
+
+  // 難易度パラメータの検証
+  if (!difficultyParam || !VALID_DIFFICULTIES.includes(difficultyParam as Difficulty)) {
+      return NextResponse.json(
+          { error: `Invalid or missing difficulty parameter. Valid options are: ${VALID_DIFFICULTIES.join(', ')}.` },
+          { status: 400 }
+      );
+  }
+  const difficulty = difficultyParam as Difficulty;
+
   try {
-    const gameIds = await getGameIds();
-    if (gameIds.length < 2) {
-      return NextResponse.json({ error: 'Not enough game IDs available to create a quiz question.' }, { status: 500 });
+    // 指定された難易度でゲームIDを取得
+    const gameIds = await getGameIds(difficulty);
+    if (!gameIds || gameIds.length < 2) {
+      console.error(`Not enough game IDs available for difficulty ${difficulty}. Found: ${gameIds?.length ?? 0}`);
+      return NextResponse.json({ error: `Not enough game IDs available for difficulty ${difficulty}.` }, { status: 500 });
     }
 
     let gameA: Boardgame | null = null;

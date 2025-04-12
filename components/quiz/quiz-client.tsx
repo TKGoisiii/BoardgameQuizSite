@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react'; // Remove useEffect
 import { useRouter } from 'next/navigation';
 import { Boardgame } from '@/types/boardgame';
 import { QuizLoading } from '@/components/quiz/quiz-loading';
@@ -8,7 +8,12 @@ import { QuizQuestion } from '@/components/quiz/quiz-question';
 import { QuizFeedback } from '@/components/quiz/quiz-feedback';
 import { QuizControls } from '@/components/quiz/quiz-controls';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button'; // Buttonコンポーネントをインポート
 import { QuizError } from './quiz-error';
+
+// Difficulty 型を定義
+const VALID_DIFFICULTIES = ['easy', 'normal', 'hard'] as const;
+type Difficulty = typeof VALID_DIFFICULTIES[number];
 
 interface QuizData {
     questionText: string;
@@ -23,15 +28,17 @@ export function QuizClient() {
     const [score, setScore] = useState(0);
     const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
     const [showFeedback, setShowFeedback] = useState(false);
-    const [isLoading, setIsLoading] = useState(true); // 初期ロード状態を追加
+    const [isLoading, setIsLoading] = useState(false); // 初期状態はローディングしない
     const [error, setError] = useState<string | null>(null);
+    const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty | null>(null); // 選択された難易度の状態
     const router = useRouter();
 
-    const fetchQuestion = useCallback(async () => {
-        // ローディング状態の設定は呼び出し元で行う
-        setError(null); // エラー状態をリセット
+    const fetchQuestion = useCallback(async (difficulty: Difficulty) => {
+        setIsLoading(true); // フェッチ開始時にローディング
+        setError(null);
         try {
-            const response = await fetch('/api/quiz/question', {
+            // 難易度をクエリパラメータに追加
+            const response = await fetch(`/api/quiz/question?difficulty=${difficulty}`, {
                 cache: 'no-store'
             });
 
@@ -43,15 +50,21 @@ export function QuizClient() {
             setCurrentQuestion(data);
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Unknown error');
+            setCurrentQuestion(null); // エラー時は質問をクリア
         } finally {
             setIsLoading(false);
         }
-    }, []); // 依存配列を空にする
+    }, []); // 依存配列は空のまま
 
-    // 初期データ取得用のuseEffect
-    useEffect(() => {
-        fetchQuestion();
-    }, [fetchQuestion]); // fetchQuestion を依存配列に追加
+    // 難易度選択ハンドラー
+    const handleDifficultySelect = (difficulty: Difficulty) => {
+        setSelectedDifficulty(difficulty);
+        setQuestionNumber(1); // 質問番号リセット
+        setScore(0); // スコアリセット
+        setSelectedAnswer(null); // 回答リセット
+        setShowFeedback(false); // フィードバック非表示
+        fetchQuestion(difficulty); // 選択された難易度で最初の質問を取得
+    };
 
     const isCorrect = selectedAnswer !== null && currentQuestion !== null && selectedAnswer === currentQuestion.correctAnswerId;
 
@@ -68,34 +81,69 @@ export function QuizClient() {
         setSelectedAnswer(null);
         setShowFeedback(false);
 
-        if (questionNumber < 10) {
+        if (questionNumber < 10 && selectedDifficulty) { // 難易度が選択されていることを確認
             setQuestionNumber(prev => prev + 1);
-            setIsLoading(true); // 次の質問をロードする前にローディング状態にする
-            await fetchQuestion();
+            await fetchQuestion(selectedDifficulty); // 現在の難易度で次の質問を取得
         } else {
-            router.push(`/quiz/result?score=${score}`);
+            // 結果ページに難易度も渡す (任意)
+            router.push(`/quiz/result?score=${score}&difficulty=${selectedDifficulty}`);
         }
     };
 
-    // 初期ロード中または次の問題ロード中
+    // --- レンダリングロジック ---
+
+    // 1. 難易度選択画面
+    if (!selectedDifficulty) {
+        return (
+            <div className="flex flex-col items-center justify-center gap-4 p-8">
+                <h2 className="text-2xl font-semibold mb-4">難易度を選択してください</h2>
+                <div className="flex gap-4">
+                    {VALID_DIFFICULTIES.map((diff) => (
+                        <Button key={diff} onClick={() => handleDifficultySelect(diff)} size="lg">
+                            {diff.charAt(0).toUpperCase() + diff.slice(1)}
+                        </Button>
+                    ))}
+                </div>
+                {error && <p className="text-red-500 mt-4">エラー: {error}</p>}
+            </div>
+        );
+    }
+
+    // 2. ローディング中
     if (isLoading) {
         return <QuizLoading />;
     }
 
-    // エラー発生時
+    // 3. エラー発生時 (難易度選択後)
     if (error) {
-        return <QuizError error={error} />;
+        return (
+            <>
+                <QuizError error={error} />
+                <Button onClick={() => setSelectedDifficulty(null)} className="mt-4">
+                    難易度選択に戻る
+                </Button>
+            </>
+        );
     }
 
-    // データ取得後、currentQuestion がまだ null の場合 (通常は発生しないはずだが念のため)
+    // 4. 質問データがない場合 (フェッチ後だがエラーではない稀なケース)
     if (!currentQuestion) {
-        return <QuizError error="クイズデータの読み込みに失敗しました。" />;
+        return (
+            <>
+                <QuizError error="クイズデータの読み込みに失敗しました。" />
+                <Button onClick={() => setSelectedDifficulty(null)} className="mt-4">
+                    難易度選択に戻る
+                </Button>
+            </>
+        );
     }
 
-    // 通常の表示
+    // 5. 通常のクイズ表示
     return (
         <>
-            <p>{questionNumber} / 10 問目</p>
+            <div className="mb-2 text-sm text-gray-600">
+                難易度: {selectedDifficulty} | {questionNumber} / 10 問目
+            </div>
             <QuizQuestion
                 questionText={currentQuestion.questionText}
                 gameA={currentQuestion.gameA}
