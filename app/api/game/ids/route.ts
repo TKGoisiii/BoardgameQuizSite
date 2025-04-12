@@ -12,13 +12,22 @@ let cacheTimestamp: number | null = null;
 const AWS_REGION = process.env.MY_AWS_REGION;
 const S3_BUCKET_NAME = process.env.MY_S3_BUCKET_NAME;
 const S3_OBJECT_KEY = process.env.MY_S3_OBJECT_KEY;
+// Read custom environment variables for credentials
+const MY_AWS_ACCESS_KEY_ID = process.env.MY_AWS_ACCESS_KEY_ID;
+const MY_AWS_SECRET_ACCESS_KEY = process.env.MY_AWS_SECRET_ACCESS_KEY;
 
-// S3クライアントの初期化 (リージョンを明示的に指定)
-const s3Client = new S3Client({ region: AWS_REGION });
+// S3クライアントの初期化 (リージョンとカスタム認証情報を明示的に指定)
+const s3Client = new S3Client({
+    region: AWS_REGION,
+    credentials: {
+        accessKeyId: MY_AWS_ACCESS_KEY_ID || '', // Fallback to empty string if undefined
+        secretAccessKey: MY_AWS_SECRET_ACCESS_KEY || '', // Fallback to empty string if undefined
+    }
+});
 
-// Check for required environment variables
-if (!AWS_REGION || !S3_BUCKET_NAME || !S3_OBJECT_KEY) {
-    console.error('Environment variables AWS_REGION, S3_BUCKET_NAME, and S3_OBJECT_KEY must be set.');
+// Check for required environment variables (認証情報もチェックに追加)
+if (!AWS_REGION || !S3_BUCKET_NAME || !S3_OBJECT_KEY || !MY_AWS_ACCESS_KEY_ID || !MY_AWS_SECRET_ACCESS_KEY) {
+    console.error('Environment variables AWS_REGION, S3_BUCKET_NAME, S3_OBJECT_KEY, MY_AWS_ACCESS_KEY_ID, and MY_AWS_SECRET_ACCESS_KEY must be set.');
     // Consider throwing an error or handling appropriately for production
 }
 
