@@ -9,9 +9,9 @@ let cacheTimestamp: number | null = null;
 // -------------------------
 
 // 環境変数からAWSリージョン、S3バケット名、オブジェクトキーを取得
-const AWS_REGION = process.env.AWS_REGION;
-const S3_BUCKET_NAME = process.env.S3_BUCKET_NAME;
-const S3_OBJECT_KEY = process.env.S3_OBJECT_KEY;
+const AWS_REGION = process.env.MY_AWS_REGION;
+const S3_BUCKET_NAME = process.env.MY_S3_BUCKET_NAME;
+const S3_OBJECT_KEY = process.env.MY_S3_OBJECT_KEY;
 
 // S3クライアントの初期化 (リージョンを明示的に指定)
 const s3Client = new S3Client({ region: AWS_REGION });
